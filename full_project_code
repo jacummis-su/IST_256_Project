@@ -1,0 +1,150 @@
+#INPUTTING A PHONE NUMBER TO RETRIEVE ITS ASSOCIATED LOCATION
+
+import requests
+
+phone = input("Enter your phone number: ")
+params = { 'phone' : phone }
+headers={ "X-Mashape-Key": "sNi0LJs3rBmshZL7KQOrRWXZqIsBp1XUjhnjsnYUsE6iKo14Nc",
+    "Accept": "application/json" }
+response = requests.get("https://cosmin-us-phone-number-lookup.p.mashape.com/get.php", params=params, headers=headers )
+
+phone_data = response.json()
+phone_data
+
+#CREATING A MAP TO CHECK AND SEE IF THE CORRECT LOCATION IS ASSOCIATED WITH THE INPUT PHONE NUMBER
+
+import folium
+
+lat = float(phone_data['latitude'])
+lon = float(phone_data['longitude'])
+area = (lat, lon)
+map = folium.Map(location = area, zoom_start=10)
+map
+
+#CREATING A DATA FRAME OF PHONE_DATA
+
+import pandas as pd
+
+near_me = pd.DataFrame(phone_data)
+near_me.head(1)
+
+#USING THE DATA FRAME, CREATING A PINPOINTED MAP WITH A MARKER
+
+for row in near_me.to_records():
+    pos = (row['latitude'],row['longitude'])
+    message = "%s, %s" % (row['city'],row['state'])
+    marker = folium.Marker(location=pos, popup=message)
+    map.add_child(marker)
+map
+
+#CREATING FUNCTIONS TO OUTPUT NEARBY RESTAURANTS, THEIR REVIEWS, AND OTHER RELEVENT INFORMATION
+
+import json
+import time
+class GooglePlaces(object):
+    def __init__(self, apiKey):
+        super(GooglePlaces, self).__init__()
+        self.apiKey = apiKey
+ 
+    def search_places_by_coordinate(self, location, radius, types):
+        url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+        places = []
+        params = {
+            'location': location,
+            'radius': radius,
+            'types': types,
+            'key': self.apiKey
+        }
+        res = requests.get(url, params = params)
+        results =  json.loads(res.content)
+        places.extend(results['results'])
+        time.sleep(2)
+        while "next_page_token" in results:
+            params['pagetoken'] = results['next_page_token'],
+            res = requests.get(endpoint_url, params = params)
+            results = json.loads(res.content)
+            places.extend(results['results'])
+            time.sleep(2)
+        return places
+ 
+    def get_place_details(self, place_id, fields):
+        endpoint_url = "https://maps.googleapis.com/maps/api/place/details/json"
+        params = {
+            'placeid': place_id,
+            'fields': ",".join(fields),
+            'key': self.apiKey
+        }
+        res = requests.get(endpoint_url, params = params)
+        place_details =  json.loads(res.content)
+        return place_details
+        
+#PUTTING THE FUNCTIONS TO WORK, AND OUTPUTTING RESTAURANT INFO AND REVIEWS
+
+apikey = '159f1a48ad7a3d6f4dbe5d5a71c2135c'
+
+radius = float(input('Enter the radius of meters you are looking for: '))
+kind = 'restuarant'
+
+api = GooglePlaces(apikey)
+
+website = ""
+name = ""
+address = ""
+phone_number = ""
+reviews = []
+
+places = api.search_places_by_coordinate("41.8839,-87.6369", radius, kind)
+fields = ['name', 'formatted_address', 'international_phone_number', 'website', 'rating', 'review']
+
+for place in places:
+    details = api.get_place_details(place['place_id'], fields)
+
+    website = details['result']['website']
+
+    name = details['result']['name']
+
+    address = details['result']['formatted_address']
+
+    phone_number = details['result']['international_phone_number']
+
+    reviews = details['result']['reviews']
+
+print("===================PLACE===================")
+print("Name:", name)
+print("Website:", website)
+print("Address:", address)
+print("Phone Number", phone_number)
+print("==================REVIEWS==================")
+for review in reviews:
+    author_name = review['author_name']
+    rating = review['rating']
+    text = review['text']
+    time = review['relative_time_description']
+    profile_photo = review['profile_photo_url']
+    print("Author Name:", author_name)
+    print("Rating:", rating)
+    print("Text:", text)
+    print("Time:", time)
+    print("Profile photo:", profile_photo)
+    print("-----------------------------------------")
+    
+#PERFORMING SENTIMENT ANALYSIS & PROVIDING A SUGGESTION
+
+url = 'http://text-processing.com/api/sentiment/'
+text = review['text']
+name = details['result']['name']
+
+options = { 'text' : text}
+response = requests.post(url, data = options)
+sentiment = response.json()
+if sentiment['label'] == 'pos':
+    print('Reviews of %s are positive! You should eat there!' % name)
+else:
+    print('Reviews of %s are not good. Consider eating somewhere else.' % name)
+    
+# END OF CODE!!!
+
+
+
+
+
