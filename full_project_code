@@ -38,6 +38,7 @@ for row in near_me.to_records():
 map
 
 #CREATING FUNCTIONS TO OUTPUT NEARBY RESTAURANTS, THEIR REVIEWS, AND OTHER RELEVENT INFORMATION
+#functions courtesy of https://python.gotrained.com/google-places-api-extracting-location-data-reviews/
 
 import json
 import time
@@ -82,6 +83,9 @@ class GooglePlaces(object):
 
 apikey = '159f1a48ad7a3d6f4dbe5d5a71c2135c'
 
+lat = float(phone_data['latitude'])
+lon = float(phone_data['longitude'])
+location = (lat, lon)
 radius = float(input('Enter the radius of meters you are looking for: '))
 kind = 'restuarant'
 
@@ -93,7 +97,7 @@ address = ""
 phone_number = ""
 reviews = []
 
-places = api.search_places_by_coordinate("41.8839,-87.6369", radius, kind)
+places = api.search_places_by_coordinate(location, radius, kind)
 fields = ['name', 'formatted_address', 'international_phone_number', 'website', 'rating', 'review']
 
 for place in places:
@@ -143,8 +147,3 @@ else:
     print('Reviews of %s are not good. Consider eating somewhere else.' % name)
     
 # END OF CODE!!!
-
-
-
-
-
