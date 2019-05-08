@@ -1,0 +1,10 @@
+My goal for this project was to eventually ouput restaurant reviews and sentiment scores for those reviews to offer 
+a suggestion for whether to eat there or not. Unfortunately, the code was a little too complicated for me to be able
+to scrape review data using Google Places API, and that part of the project never came to fruition. Had I been able to
+make the code work properly, the reviews would have output correctly and then ran through sentiment analyis. From there,
+the 'label' key returned from the sentiment analysis would have been put through an 'if' statement like this:
+
+if sentiment['label'] == 'pos':
+    print('Reviews of %s are positive! You should eat there!' % name)
+else:
+    print('Reviews of %s are not good. Consider eating somewhere else.' % name) 
